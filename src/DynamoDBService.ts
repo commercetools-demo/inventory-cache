@@ -1,9 +1,9 @@
 import {
   AttributeValue,
+  DynamoDB,
   ReturnValue,
-  UpdateItemInput,
-} from "aws-sdk/clients/dynamodb";
-import { DynamoDB } from "aws-sdk";
+  UpdateItemCommandInput,
+} from "@aws-sdk/client-dynamodb";
 
 import { DynamoDBRepository } from "./DynamoDBRepository";
 import { Config, DynamoDBConfig } from "./DynamoDBConfig";
@@ -48,7 +48,7 @@ export class DynamoDBService implements DynamoDBRepository {
     names["#availableQuantityAttributeName"] =
       this.availableQuantityAttributeName;
 
-    let updateItemRequest: UpdateItemInput = {
+    let updateItemRequest: UpdateItemCommandInput = {
       TableName: this.tableName,
       Key: this.getPartitionKeyMap(sku, channel),
       UpdateExpression:
@@ -61,7 +61,7 @@ export class DynamoDBService implements DynamoDBRepository {
     };
 
     try {
-      await this.dynamoDbClient.updateItem(updateItemRequest).promise();
+      await this.dynamoDbClient.updateItem(updateItemRequest);
       return true;
     } catch (e) {
       console.error(e);
@@ -83,7 +83,7 @@ export class DynamoDBService implements DynamoDBRepository {
     names["#availableQuantityAttributeName"] =
       this.availableQuantityAttributeName;
 
-    let updateItemRequest: UpdateItemInput = {
+    let updateItemRequest: UpdateItemCommandInput = {
       TableName: this.tableName,
       Key: this.getPartitionKeyMap(sku, channel),
       UpdateExpression:
@@ -95,7 +95,7 @@ export class DynamoDBService implements DynamoDBRepository {
     };
 
     try {
-      await this.dynamoDbClient.updateItem(updateItemRequest).promise();
+      await this.dynamoDbClient.updateItem(updateItemRequest);
       return true;
     } catch (e) {
       console.error("Error updating item:");
@@ -116,7 +116,7 @@ export class DynamoDBService implements DynamoDBRepository {
     names["#availableQuantityAttributeName"] =
       this.availableQuantityAttributeName;
 
-    let updateItemRequest: UpdateItemInput = {
+    let updateItemRequest: UpdateItemCommandInput = {
       TableName: this.tableName,
       Key: this.getPartitionKeyMap(sku, channel),
       UpdateExpression:
@@ -127,7 +127,7 @@ export class DynamoDBService implements DynamoDBRepository {
     };
 
     try {
-      await this.dynamoDbClient.updateItem(updateItemRequest).promise();
+      await this.dynamoDbClient.updateItem(updateItemRequest);
     } catch (e) {
       console.error("Error updating item:");
       console.error(e);
@@ -146,7 +146,7 @@ export class DynamoDBService implements DynamoDBRepository {
     values[":zero"] = { N: "0" };
     names["#reserveQuantityAttributeName"] = this.reservedQuantityAttributeName;
 
-    let updateItemRequest: UpdateItemInput = {
+    let updateItemRequest: UpdateItemCommandInput = {
       TableName: this.tableName,
       Key: this.getPartitionKeyMap(sku, channel),
       UpdateExpression:
@@ -158,7 +158,7 @@ export class DynamoDBService implements DynamoDBRepository {
     };
 
     try {
-      await this.dynamoDbClient.updateItem(updateItemRequest).promise();
+      await this.dynamoDbClient.updateItem(updateItemRequest);
     } catch (e) {
       console.error("Error updating item:");
       console.error(e);

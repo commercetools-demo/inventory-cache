@@ -1,4 +1,4 @@
-import { DynamoDB } from "aws-sdk";
+import { DynamoDB } from "@aws-sdk/client-dynamodb";
 
 export interface Config {
   accessKeyId: string;
@@ -21,7 +21,14 @@ export class DynamoDBConfig {
   }
 
   public getDynamoDbClient(): DynamoDB {
-    const dynamoDbClient = new DynamoDB();
+    const dynamoDbClient = new DynamoDB({
+      credentials: {
+        accessKeyId: this.accessKeyId,
+        secretAccessKey: this.secretAccessKey,
+        sessionToken: this.sessionToken,
+      },
+      region: this.region,
+    });
     return dynamoDbClient;
   }
 }
