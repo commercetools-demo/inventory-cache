@@ -1,8 +1,9 @@
-import { ReservationLineItem } from "./CreateReservation";
+import { ReservationLineItem } from "../types/CreateReservation";
 import { DynamoDBService } from "./DynamoDBService";
 import { Order, LineItem } from "@commercetools/platform-sdk";
+import { TInventoryService } from "../types/InventoryService";
 
-export class InventoryService {
+export class InventoryService implements TInventoryService {
   constructor(private ddbs: DynamoDBService) {}
 
   public async reserveInventoryOnReservation(lineItems: ReservationLineItem[]): Promise<boolean> {
@@ -63,8 +64,8 @@ export class InventoryService {
     let reservedLineItems: ReservationLineItem[] = [];
     for (let lineItem of lineItems) {
       let reservationResult = await this.ddbs.reserveItem(
-        lineItem.aimsVariantReferenceId,
-        lineItem.eventReferenceIdForInventory,
+        lineItem.variantSKU,
+        lineItem.inventoryChannelKey,
         lineItem.quantity
       );
       if (reservationResult) {
@@ -83,8 +84,8 @@ export class InventoryService {
   private revertAllLineItemsReservations(lineItems: ReservationLineItem[]): void {
     for (let lineItem of lineItems) {
       this.ddbs.releaseItem(
-        lineItem.aimsVariantReferenceId,
-        lineItem.eventReferenceIdForInventory,
+        lineItem.variantSKU,
+        lineItem.inventoryChannelKey,
         lineItem.quantity
       );
     }
