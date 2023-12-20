@@ -1,25 +1,24 @@
-import { ReservationLineItem } from "../types/CreateReservation";
 import { DynamoDBService } from "./DynamoDBService";
-import { Order, LineItem } from "@commercetools/platform-sdk";
+import { Order, LineItem, CartDraft, LineItemDraft, Cart } from "@commercetools/platform-sdk";
 import { TInventoryService } from "../types/InventoryService";
 
 export class InventoryService implements TInventoryService {
   constructor(private ddbs: DynamoDBService) {}
 
-  public async reserveInventoryOnReservation(lineItems: ReservationLineItem[]): Promise<boolean> {
-    return this.reserveLineItems(lineItems);
+  public async reserveInventoryOnReservation(cartDraft: CartDraft): Promise<boolean> {
+    return this.reserveLineItems(cartDraft.lineItems!);
   }
 
-  public async releaseInventoryOnCancelReservation(lineItems: LineItem[]): Promise<boolean> {
-    return this.releaseLineItems(lineItems);
+  public async releaseInventoryOnCancelReservation(cart: Cart): Promise<boolean> {
+    return this.releaseLineItems(cart.lineItems);
   }
 
-  public restockInventoryOnCancelOrder(order: Order): boolean {
+  public async restockInventoryOnCancelOrder(order: Order): Promise<boolean> {
     this.restockLineItems(order.lineItems);
     return true;
   }
 
-  public releaseInventoryOnFinishOrder(order: Order): boolean {
+  public async releaseInventoryOnFinishOrder(order: Order): Promise<boolean> {
     this.unstockLineItems(order.lineItems);
     return true;
   }
@@ -27,8 +26,8 @@ export class InventoryService implements TInventoryService {
   private unstockLineItems(lineItems: LineItem[]): void {
     for (let lineItem of lineItems) {
       this.ddbs.unstockItem(
-        lineItem.variant?.sku || "",
-        lineItem.supplyChannel?.obj?.key || "",
+        lineItem.variant?.sku!,
+        lineItem.supplyChannel?.id,
         lineItem.quantity
       );
     }
@@ -37,8 +36,8 @@ export class InventoryService implements TInventoryService {
   private restockLineItems(lineItems: LineItem[]): void {
     for (let lineItem of lineItems) {
       this.ddbs.restockItem(
-        lineItem.variant?.sku || "",
-        lineItem.supplyChannel?.obj?.key || "",
+        lineItem.variant?.sku!,
+        lineItem.supplyChannel?.id,
         lineItem.quantity
       );
     }
@@ -48,8 +47,8 @@ export class InventoryService implements TInventoryService {
     let allReleased = false;
     for (let lineItem of lineItems) {
       allReleased = await this.ddbs.releaseItem(
-        lineItem.variant?.sku || "",
-        lineItem.supplyChannel?.obj?.key || "",
+        lineItem.variant?.sku!,
+        lineItem.supplyChannel?.id,
         lineItem.quantity
       );
       if (!allReleased) {
@@ -59,14 +58,14 @@ export class InventoryService implements TInventoryService {
     return allReleased;
   }
 
-  private async reserveLineItems(lineItems: ReservationLineItem[]): Promise<boolean> {
+  private async reserveLineItems(lineItems: LineItemDraft[]): Promise<boolean> {
     let allItemsReserved = true;
-    let reservedLineItems: ReservationLineItem[] = [];
+    let reservedLineItems: LineItemDraft[] = [];
     for (let lineItem of lineItems) {
       let reservationResult = await this.ddbs.reserveItem(
-        lineItem.variantSKU,
-        lineItem.inventoryChannelKey,
-        lineItem.quantity
+        lineItem.sku!,
+        lineItem.supplyChannel?.id,
+        lineItem.quantity!
       );
       if (reservationResult) {
         reservedLineItems.push(lineItem);
@@ -81,12 +80,12 @@ export class InventoryService implements TInventoryService {
     return allItemsReserved;
   }
 
-  private revertAllLineItemsReservations(lineItems: ReservationLineItem[]): void {
+  private revertAllLineItemsReservations(lineItems: LineItemDraft[]): void {
     for (let lineItem of lineItems) {
       this.ddbs.releaseItem(
-        lineItem.variantSKU,
-        lineItem.inventoryChannelKey,
-        lineItem.quantity
+        lineItem.sku!,
+        lineItem.supplyChannel?.id,
+        lineItem.quantity!
       );
     }
   }

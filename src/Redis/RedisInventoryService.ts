@@ -1,5 +1,10 @@
-import { ReservationLineItem } from '../types/CreateReservation';
-import { Order, LineItem } from '@commercetools/platform-sdk';
+import {
+  Order,
+  LineItem,
+  CartDraft,
+  LineItemDraft,
+  Cart,
+} from '@commercetools/platform-sdk';
 import { TInventoryService } from '../types/InventoryService';
 import { RedisService } from './RedisService';
 import { createApiRoot } from '../CT/client/create.client';
@@ -12,53 +17,65 @@ export class InventoryService implements TInventoryService {
   }
 
   public async reserveInventoryOnReservation(
-    lineItems: ReservationLineItem[]
+    cartDraft: CartDraft
   ): Promise<boolean> {
-    return this.reserveLineItems(lineItems);
+    this.validateDraftLineItems(cartDraft.lineItems);
+    return this.reserveLineItems(cartDraft.lineItems!);
   }
 
   public async releaseInventoryOnCancelReservation(
-    lineItems: LineItem[]
+    cart: Cart
   ): Promise<boolean> {
-    return this.releaseLineItems(lineItems);
+    this.validateLineItems(cart.lineItems);
+    return this.releaseLineItems(cart.lineItems);
   }
 
-  public restockInventoryOnCancelOrder(order: Order): boolean {
-    this.restockLineItems(order.lineItems);
-    return true;
+  public restockInventoryOnCancelOrder(order: Order): Promise<boolean> {
+    this.validateLineItems(order.lineItems);
+    return this.restockLineItems(order.lineItems);
   }
 
-  public releaseInventoryOnFinishOrder(order: Order): boolean {
-    this.unstockLineItems(order.lineItems);
-    return true;
+  public async releaseInventoryOnFinishOrder(order: Order): Promise<boolean> {
+    this.validateLineItems(order.lineItems);
+    return this.unstockLineItems(order.lineItems);
   }
 
-  private unstockLineItems(lineItems: LineItem[]): void {
+  private async unstockLineItems(lineItems: LineItem[]): Promise<boolean> {
+    let allReleased = true;
     for (let lineItem of lineItems) {
-      this.redisService.unstockItem(
-        lineItem.variant?.sku || '',
-        lineItem.supplyChannel?.obj?.key || '',
+      const result = await this.redisService.unstockItem(
+        lineItem.variant?.sku!,
+        lineItem.supplyChannel?.id,
         lineItem.quantity
       );
+      if (!result) {
+        allReleased = false;
+      }
     }
+    return allReleased;
   }
 
-  private restockLineItems(lineItems: LineItem[]): void {
+  private async restockLineItems(lineItems: LineItem[]): Promise<boolean> {
+    let allRestocked = true;
     for (let lineItem of lineItems) {
-      this.redisService.restockItem(
-        lineItem.variant?.sku || '',
-        lineItem.supplyChannel?.obj?.key || '',
+      const result = await this.redisService.restockItem(
+        lineItem.variant?.sku!,
+        lineItem.supplyChannel?.id,
         lineItem.quantity
       );
+      if (!result) {
+        allRestocked = false;
+      }
     }
+    return allRestocked;
   }
 
   private async releaseLineItems(lineItems: LineItem[]): Promise<boolean> {
     let allReleased = false;
     for (let lineItem of lineItems) {
       allReleased = await this.redisService.releaseItem(
-        lineItem.variant?.sku || '',
-        lineItem.supplyChannel?.obj?.key || '',
+        lineItem.variant?.sku!,
+        lineItem.supplyChannel?.id,
         lineItem.quantity
       );
       if (!allReleased) {
@@ -68,17 +85,15 @@ export class InventoryService implements TInventoryService {
     return allReleased;
   }
 
-  private async reserveLineItems(
-    lineItems: ReservationLineItem[]
-  ): Promise<boolean> {
+  private async reserveLineItems(lineItems: LineItemDraft[]): Promise<boolean> {
     let allItemsReserved = true;
-    let reservedLineItems: ReservationLineItem[] = [];
+    let reservedLineItems: LineItemDraft[] = [];
     try {
       for (let lineItem of lineItems) {
         let reservationResult = await this.redisService.reserveItem(
-          lineItem.variantSKU,
-          lineItem.inventoryChannelKey,
-          lineItem.quantity
+          lineItem.sku!,
+          lineItem.supplyChannel?.id,
+          lineItem.quantity!
         );
 
         if (reservationResult === 'SUCCESS') {
@@ -86,9 +101,9 @@ export class InventoryService implements TInventoryService {
         } else if (reservationResult === 'DOES_NOT_EXIST') {
           await this.initializeInventory(lineItem);
           let retryReservationResult = await this.redisService.reserveItem(
-            lineItem.variantSKU,
-            lineItem.inventoryChannelKey,
-            lineItem.quantity
+            lineItem.sku!,
+            lineItem.supplyChannel?.id,
+            lineItem.quantity!
           );
           if (retryReservationResult === 'SUCCESS') {
             reservedLineItems.push(lineItem);
@@ -110,29 +125,25 @@ export class InventoryService implements TInventoryService {
     return allItemsReserved;
   }
 
-  private revertAllLineItemsReservations(
-    lineItems: ReservationLineItem[]
-  ): void {
+  private revertAllLineItemsReservations(lineItems: LineItemDraft[]): void {
     for (let lineItem of lineItems) {
       this.redisService.releaseItem(
-        lineItem.variantSKU,
-        lineItem.inventoryChannelKey,
-        lineItem.quantity
+        lineItem.sku!,
+        lineItem.supplyChannel?.id,
+        lineItem.quantity!
       );
     }
   }
 
-  private async initializeInventory(
-    lineItem: ReservationLineItem
-  ): Promise<void> {
+  private async initializeInventory(lineItem: LineItemDraft): Promise<void> {
     const availableQuantityInCT =
       await this.getAvailableQuantityForLineItem(lineItem);
     if (availableQuantityInCT === null) {
       throw new Error('Could not find available quantity in CT');
     }
     const initializationResult = await this.redisService.initializeItem(
-      lineItem.variantSKU,
-      lineItem.inventoryChannelKey,
+      lineItem.sku!,
+      lineItem.supplyChannel?.id,
       availableQuantityInCT
     );
     if (initializationResult !== 'SUCCESS') {
@@ -141,26 +152,28 @@ export class InventoryService implements TInventoryService {
   }
 
   private async getAvailableQuantityForLineItem(
-    lineItem: ReservationLineItem
+    lineItem: LineItemDraft
   ): Promise<number | null> {
     let channelId: string | null = null;
     let availableQuantity: number | null = null;
 
-    const channelResult = await this.apiRoot
-      .channels()
-      .get({
-        queryArgs: {
-          limit: 1,
-          where: `key = "${lineItem.inventoryChannelKey}" `,
-        },
-      })
-      .execute();
+    if (lineItem.supplyChannel?.id) {
+      const channelResult = await this.apiRoot
+        .channels()
+        .get({
+          queryArgs: {
+            limit: 1,
+            where: `id = "${lineItem.supplyChannel?.id}" `,
+          },
+        })
+        .execute();
 
-    if (channelResult.body.results.length === 1) {
-      channelId = channelResult.body.results[0].id;
+      if (channelResult.body.results.length === 1) {
+        channelId = channelResult.body.results[0].id;
+      }
     }
 
-    let where = `sku = "${lineItem.variantSKU}"`;
+    let where = `sku = "${lineItem.sku}"`;
     if (channelId === null) {
       where += ` AND supplyChannel is not defined`;
     } else {
@@ -188,5 +201,42 @@ export class InventoryService implements TInventoryService {
       availableQuantity = inventoryResult.body.results[1].availableQuantity;
     }
     return availableQuantity;
+  }
+
+  private validateDraftLineItems(lineItems?: LineItemDraft[]): void {
+    if (!lineItems) {
+      throw new Error('No line items provided');
+    }
+    if (lineItems.length === 0) {
+      throw new Error('No line items provided');
+    }
+    lineItems.forEach((lineItem) => {
+      if (!lineItem.quantity || lineItem.quantity == 0) {
+        throw new Error('No quantity provided');
+      }
+      if (!lineItem.sku) {
+        throw new Error('No sku provided');
+      }
+    });
+  }
+
+  private validateLineItems(lineItems?: LineItem[]): void {
+    if (!lineItems) {
+      throw new Error('No line items provided');
+    }
+    if (lineItems.length === 0) {
+      throw new Error('No line items provided');
+    }
+    lineItems.forEach((lineItem) => {
+      if (!lineItem.quantity || lineItem.quantity == 0) {
+        throw new Error('No quantity provided');
+      }
+      if (!lineItem.variant) {
+        throw new Error('No variant provided');
+      }
+      if (!lineItem.variant.sku) {
+        throw new Error('No sku provided');
+      }
+    });
   }
 }
