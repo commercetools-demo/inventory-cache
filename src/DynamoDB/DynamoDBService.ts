@@ -21,13 +21,13 @@ export class DynamoDBService implements DynamoDBRepository {
     this.dynamoDbClient = dynamoDbClient.getDynamoDbClient();
   }
 
-  private getPartitionKeyValue(sku: string, channel: string): string {
-    return sku + ":" + channel;
+  private getPartitionKeyValue(sku: string, channel: string | undefined): string {
+    return sku + ":" + channel || "";
   }
 
   private getPartitionKeyMap(
     sku: string,
-    channel: string
+    channel: string | undefined
   ): { [key: string]: AttributeValue } {
     let map: { [key: string]: AttributeValue } = {};
     map[this.partitionKeyName] = { S: this.getPartitionKeyValue(sku, channel) };
@@ -36,7 +36,7 @@ export class DynamoDBService implements DynamoDBRepository {
 
   public async reserveItem(
     sku: string,
-    channel: string,
+    channel: string | undefined,
     quantity: number
   ): Promise<boolean> {
     let values: { [key: string]: AttributeValue } = {};
@@ -71,7 +71,7 @@ export class DynamoDBService implements DynamoDBRepository {
 
   public async releaseItem(
     sku: string,
-    channel: string,
+    channel: string | undefined,
     quantity: number
   ): Promise<boolean> {
     let values: { [key: string]: AttributeValue } = {};
@@ -106,7 +106,7 @@ export class DynamoDBService implements DynamoDBRepository {
 
   public async restockItem(
     sku: string,
-    channel: string,
+    channel: string | undefined,
     quantity: number
   ): Promise<void> {
     let values: { [key: string]: AttributeValue } = {};
@@ -136,7 +136,7 @@ export class DynamoDBService implements DynamoDBRepository {
 
   public async unstockItem(
     sku: string,
-    channel: string,
+    channel: string | undefined,
     quantity: number
   ): Promise<void> {
     let values: { [key: string]: AttributeValue } = {};

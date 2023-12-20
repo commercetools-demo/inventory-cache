@@ -1,0 +1,141 @@
+{
+	"info": {
+		"_postman_id": "cfb5a213-4ace-4dd7-a97e-d3f3962f8689",
+		"name": "Inventory-cache",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "30535130"
+	},
+	"item": [
+		{
+			"name": "create reservation",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    // CartDraft entity\n    \"lineItems\": [\n        {\n            \"sku\": \"M0E20000000DVL9\",\n            \"quantity\": \"1\"\n        },\n        {\n            \"supplyChannel\": {\n                \"id\": \"d5bbd9cd-db6a-4dd6-9bdb-e79c5109dcc4\"\n            },\n            \"sku\": \"M0E20000000DVL9\",\n            \"quantity\": \"1\"\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}/create-reservation",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"create-reservation"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "finalize order",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    // Order entity\n    \"lineItems\": [\n        {\n            \"supplyChannel\": {\n                \"id\": \"d5bbd9cd-db6a-4dd6-9bdb-e79c5109dcc4\"\n            },\n            \"variant\": {\n                \"sku\": \"M0E20000000DVL9\"\n            },\n            \"quantity\": \"1\"\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}/finalize-order",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"finalize-order"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "cancel reservation",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    // Cart entity\n    \"lineItems\": [\n        {\n            \"supplyChannel\": {\n                \"id\": \"d5bbd9cd-db6a-4dd6-9bdb-e79c5109dcc4\"\n            },\n            \"variant\": {\n                \"sku\": \"M0E20000000DVL9\"\n            },\n            \"quantity\": \"1\"\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}/cancel-reservation",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"cancel-reservation"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "cancel order",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    // Order entity\n    \"lineItems\": [\n        {\n            \"supplyChannel\": {\n                \"id\": \"d5bbd9cd-db6a-4dd6-9bdb-e79c5109dcc4\"\n            },\n            \"variant\": {\n                \"sku\": \"M0E20000000DVL9\"\n            },\n            \"quantity\": \"1\"\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}/cancel-order",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"cancel-order"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "host",
+			"value": "localhost:3000",
+			"type": "string"
+		}
+	]
+}

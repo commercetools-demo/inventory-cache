@@ -2,7 +2,6 @@ import { DynamoDBService } from "../DynamoDB/DynamoDBService";
 import { InventoryService as DDBInventoryService } from "../DynamoDB/DynamoDBInventoryService";
 import { InventoryService as RedisInventoryService } from "../Redis/RedisInventoryService";
 import { TInventoryService } from "../types/InventoryService";
-import { RedisClient } from "../Redis/RedisClient";
 import { RedisService } from "../Redis/RedisService";
 
 export const getInventoryService = (): TInventoryService | undefined => {
