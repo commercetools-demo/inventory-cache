@@ -1,0 +1,31 @@
+deployAs:
+  - name: inventory-service
+    applicationType: service
+    endpoint: /inventory-service
+    configuration:
+      standardConfiguration:
+        - key: CTP_REGION
+          description: commercetools Composable Commerce API region
+          required: true
+        - key: USE_REDIS
+          description: use Redis as DB
+          required: true
+        - key: REDISHOST
+          description: Redis host/ip
+          required: false
+        - key: REDISPORT
+          description: Redis port
+          required: false
+      securedConfiguration:
+        - key: CTP_PROJECT_KEY
+          description: commercetools Composable Commerce project key
+          required: true
+        - key: CTP_CLIENT_ID
+          description: commercetools Composable Commerce client ID
+          required: true
+        - key: CTP_CLIENT_SECRET
+          description: commercetools Composable Commerce client secret
+          required: true
+        - key: CTP_SCOPE
+          description: commercetools Composable Commerce client scope
+          required: true
