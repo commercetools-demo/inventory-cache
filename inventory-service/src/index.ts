@@ -1,13 +1,13 @@
-import express from 'express';
-
 import { config } from 'dotenv';
 config();
 
+import express from 'express';
 import { cancelOrder, cancelReservation, createReservation, finalizeOrder } from './routes';
 import { getInventoryService } from './utils/inventoryInjector';
 
 const app = express();
-const port = 3000;
+
+const PORT = 8080;
 
 app.use(express.json());
 
@@ -53,6 +53,6 @@ app.delete('/cancel-order', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Server is running at ${PORT}`);
 });

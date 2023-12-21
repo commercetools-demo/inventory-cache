@@ -11,6 +11,8 @@ export const createReservation = async (
   inventory: TInventoryService,
   body: CreateReservationBody
 ): Promise<CreateReservationResponse> => {
+  console.log('createReservation', body);
+  
   const response = await inventory.reserveInventoryOnReservation(
     body
   );
@@ -25,6 +27,8 @@ export const finalizeOrder = async (
   inventory: TInventoryService,
   body: FinalizeOrderBody
 ): Promise<FinalizeOrderResponse> => {
+  console.log('finalizeOrder', body);
+  
   const response = await inventory.releaseInventoryOnFinishOrder(
     body
   );
@@ -40,6 +44,7 @@ export const cancelReservation = async (
   inventory: TInventoryService,
   body: CancelReservationBody
 ): Promise<CancelReservationResponse> => {
+  console.log('cancelReservation', body);
   const result = await inventory.releaseInventoryOnCancelReservation(
     body
   );
@@ -55,6 +60,7 @@ export const cancelOrder = async (
   inventory: TInventoryService,
   body: CancelOrderBody
 ): Promise<CancelOrderResponse> => {
+  console.log('cancelOrder', body);
   const result = await inventory.restockInventoryOnCancelOrder(
     body
   );
