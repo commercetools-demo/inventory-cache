@@ -4,15 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node src/index.ts",
-    "build": "tsc",
-    "dev": "nodemon src/index.ts"
+    "start": "node build/index.js",
+    "gcp-build": "tsc",
+    "start:dev": "concurrently -k \"tsc --watch\" \"nodemon -q build/index.js\"",
+    "build": "rimraf ./build && tsc",
+    "lint": "eslint . --ext .ts",
+    "prettier": "prettier --write '**/*.{js,ts}'",
+    "test": "jest --config jest.config.cjs",
+    "test:watch": "jest --watch"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.474.0",
+    "@commercetools-backend/loggers": "^22.14.3",
     "@commercetools/platform-sdk": "^7.1.0",
     "@commercetools/sdk-client-v2": "^2.3.0",
     "aws-sdk": "",
@@ -29,6 +34,7 @@
     "eslint-formatter-pretty": "^6.0.0",
     "nodemon": "^3.0.1",
     "prettier": "^3.1.1",
+    "rimraf": "^5.0.5",
     "ts-node": "^10.9.1"
   }
 }
